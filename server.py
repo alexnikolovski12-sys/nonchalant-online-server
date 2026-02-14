@@ -2,11 +2,9 @@ import socket
 import threading
 import os
 
-# Render gives your app a PORT environment variable
 PORT = int(os.environ.get("PORT", 5555))
-HOST = "0.0.0.0"  # Listen on all network interfaces
+HOST = "0.0.0.0"
 
-# Create a TCP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
 server.listen()
@@ -25,7 +23,6 @@ def handle_client(conn, addr):
             if not data:
                 break
 
-            # Echo data to all clients
             for c in clients:
                 if c != conn:
                     c.send(data)
