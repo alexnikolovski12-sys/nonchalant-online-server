@@ -1,1 +1,3 @@
-# no external dependencies
+fastapi
+uvicorn[standard]
+websockets
