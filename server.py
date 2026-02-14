@@ -1,44 +1,29 @@
-import socket
-import threading
-import os
+import uvicorn
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import List
 
-PORT = int(os.environ.get("PORT", 5555))
-HOST = "0.0.0.0"
+app = FastAPI()
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
-server.listen()
+connected_clients: List[WebSocket] = []
 
-print(f"Server running on {HOST}:{PORT}")
-
-clients = []
-
-def handle_client(conn, addr):
-    print(f"New connection: {addr}")
-    clients.append(conn)
+@app.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+    connected_clients.append(ws)
+    print("Client connected")
 
     try:
         while True:
-            data = conn.recv(1024)
-            if not data:
-                break
+            data = await ws.receive_text()
 
-            for c in clients:
-                if c != conn:
-                    c.send(data)
+            # Broadcast to all other clients
+            for client in connected_clients:
+                if client != ws:
+                    await client.send_text(data)
 
-    except:
-        pass
+    except WebSocketDisconnect:
+        print("Client disconnected")
+        connected_clients.remove(ws)
 
-    print(f"Client disconnected: {addr}")
-    clients.remove(conn)
-    conn.close()
-
-def start():
-    print("Waiting for connections...")
-    while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-
-start()
+if __name__ == "__main__":
+    uvicorn.run("server:app", host="0.0.0.0", port=8000)
